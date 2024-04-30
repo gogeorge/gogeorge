@@ -16,4 +16,4 @@ Here are some ideas to get you started:
 -->
 
 
-[![trophy](https://github-profile-trophy.vercel.app/?username=gogeorge&title=Experience,Commits,Stars,Followers,Repositories,AncientUser&theme=juicyfresh&no-frame=true)](https://github.com/ryo-ma/github-profile-trophy)
+[![trophy](https://github-profile-trophy.vercel.app/?username=gogeorge&title=Experience,Commits,Stars,Followers,Repositories,LongTimeUser&theme=juicyfresh&no-frame=true)](https://github.com/ryo-ma/github-profile-trophy)
