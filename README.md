@@ -1,17 +1,12 @@
 ### Hi there 👋
 
-<!--
-**gogeorge/gogeorge** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
-Here are some ideas to get you started:
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 📫 How to reach me: ...
-- ⚡ Fun fact: ...
--->
+- 🔭 I’m currently working on payloadCMS and Adobe Illustrator
+- 🌱 I’m currently learning Machine Learning
+- 👯 I’m looking to collaborate on UNet & Diffusion models
+- 🤔 I’m looking for help with getting remote work
+- 📫 How to reach me: grvaltas@gmail.com
 
 
 [![trophy](https://github-profile-trophy.vercel.app/?username=gogeorge&title=Experience,Commits,Stars,Followers,Repositories,MultiLanguage&theme=juicyfresh&no-frame=true)](https://github.com/ryo-ma/github-profile-trophy)
