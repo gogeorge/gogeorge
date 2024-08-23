@@ -8,11 +8,11 @@
 - 🤔 I’m looking for help with getting remote work
 - 📫 How to reach me: grvaltas@gmail.com
 
-<a href='https://github.com/gogeorge#gh-light-mode-only>
+<a href='https://github.com/gogeorge#gh-light-mode-only'>
   <img src="https://github-profile-trophy.vercel.app/?username=gogeorge&title=Experience,Commits,Stars,Followers,Repositories,MultiLanguage&no-frame=true)" />
 </a>
 
-<a href='https://github.com/gogeorge#gh-dark-mode-only>
+<a href='https://github.com/gogeorge#gh-dark-mode-only'>
   <img src="https://github-profile-trophy.vercel.app/?username=gogeorge&title=Experience,Commits,Stars,Followers,Repositories,MultiLanguage&theme=juicyfresh&no-frame=true)" />
 </a>
 
