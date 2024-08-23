@@ -16,9 +16,11 @@
   <img src="https://github-profile-trophy.vercel.app/?username=gogeorge&title=Experience,Commits,Stars,Followers,Repositories,MultiLanguage&theme=juicyfresh&no-frame=true)" />
 </a>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact&theme=chartreuse-dark">
-  <img src="https://github-readme-stats.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact" />
-</picture>
+<center>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact&theme=chartreuse-dark">
+    <img src="https://github-readme-stats.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact" />
+  </picture>
+</center>
 
 
