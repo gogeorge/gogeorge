@@ -18,8 +18,8 @@
 
 <center>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact&theme=chartreuse-dark">
-    <img src="https://github-readme-stats.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://readme-stats-personal-zeta.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact&theme=chartreuse-dark">
+    <img src="https://readme-stats-personal-zeta.vercel.app/api/top-langs?username=gogeorge&show_icons=true&locale=en&layout=compact" />
   </picture>
 </center>
 
