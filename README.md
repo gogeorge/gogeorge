@@ -1,19 +1,16 @@
 # Hi there, I'm George 👋 
 
-### 🎨 Creative Developer & ML Researcher
-Merging the worlds of **Headless CMS architecture** and **Generative AI**. Currently deep-diving into the math behind pixels and the logic behind content.
-
+### 🎨 Creative Developer & Researcher
+_Developer by day, designer by night_
+_Currently studying IBM_
 ---
 
 ### 🛠️ What I'm Up To
-- **🔭 Currently Working On:** Architecting scalable backends with [PayloadCMS](https://payloadcms.com/) and crafting vector assets in **Adobe Illustrator**.
-- **🌱 Learning Path:** Mastering the fundamentals of **Machine Learning**, specifically focusing on Computer Vision.
+- **🔭 Currently Working On:** Dashboards, API, Automating and label design **Adobe Illustrator**.
 - **👯 Collaboration:** I am actively looking to contribute to open-source projects involving **U-Net architectures** and **Stable Diffusion** fine-tuning.
-- **💼 Remote Work:** I am currently seeking new remote opportunities. If you're looking for a developer who understands both the UI and the Model, let's talk!
+- **💼 Work:** Open for remote work and freelancing
 
 ---
-
-### 📊 My Stats & Impact
 
 <p align="center">
   <img src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=gogeorge&theme=chartreuse-dark" alt="Profile Details" />
@@ -37,10 +34,10 @@ Merging the worlds of **Headless CMS architecture** and **Generative AI**. Curre
 
 ### 📬 Let's Connect
 - **Email:** [grvaltas@gmail.com](mailto:grvaltas@gmail.com)
-- **LinkedIn:** [Insert your Link Here]
-- **Portfolio:** [Insert your Link Here]
+<!-- - **LinkedIn:** 
+- **Portfolio:** -->
 
----
+// ---
 
 ### ⚡ Tech Stack & Tools
 `PayloadCMS` `Node.js` `Python` `PyTorch` `TypeScript` `Adobe Creative Cloud`
