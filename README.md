@@ -1,8 +1,8 @@
 # Hi there, I'm George 👋 
 
 ### 🎨 Creative Developer & Researcher
-_Developer by day, designer by night_
-_Currently studying IBM_
+- Developer by day, designer by night
+- Currently studying IBM
 ---
 
 ### 🛠️ What I'm Up To
