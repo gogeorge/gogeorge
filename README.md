@@ -29,17 +29,3 @@
     <img alt="Most Commit Language" src="https://github-profile-summary-cards.vercel.app/api/cards/most-commit-language?username=gogeorge&theme=default">
   </picture>
 </p>
-
-
-
----
-
-### 📬 Let's Connect
-- **Email:** [grvaltas@gmail.com](mailto:grvaltas@gmail.com)
-<!-- - **LinkedIn:** 
-- **Portfolio:** -->
-
----
-
-### ⚡ Tech Stack & Tools
-`PayloadCMS` `Node.js` `Python` `PyTorch` `TypeScript` `Adobe Creative Cloud`
