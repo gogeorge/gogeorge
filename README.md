@@ -2,12 +2,12 @@
 
 ### 🎨 Creative Developer & Researcher
 - Developer by day, designer by night
-- Currently studying IBM
+- Currently studying International Business Management
 ---
 
 ### 🛠️ What I'm Up To
-- **🔭 Currently Working On:** Dashboards, API, Automating and label design **Adobe Illustrator**.
-- **👯 Collaboration:** I am actively looking to contribute to open-source projects involving **U-Net architectures** and **Stable Diffusion** fine-tuning.
+- **🔭 Researching into language, CNF, and how they can be applied to LLMs
+- **👯 Collaboration:** I am actively looking to contribute to open-source projects involving LLM System Prompts.
 - **💼 Work:** Open for remote work and freelancing
 
 ---
