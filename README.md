@@ -6,8 +6,8 @@
 ---
 
 ### 🛠️ What I'm Up To
-- **🔭 Researching into language, CNF, and how they can be applied to LLMs
-- **👯 Collaboration:** I am actively looking to contribute to open-source projects involving LLM System Prompts.
+- **🔭 Researching:** Language, CNF, and how they can be applied to LLM system prompts
+- **👯 Collaboration:** I am actively looking to contribute to open-source projects involving UI components
 - **💼 Work:** Open for remote work and freelancing
 
 ---
