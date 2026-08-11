@@ -3,6 +3,12 @@
 
   "handle": "gogeorge",
 
+  "_theme": "Shell colour: \"lime\", \"noir\" (black), \"snow\" (white), \"cobalt\" (blue) or \"coral\" (pink). The screens follow the viewer's GitHub light/dark setting either way.",
+  "theme": "lime",
+
+  "_avatar": "Profile picture in the cart slot: \"male\", \"female\", or \"activity\" for a mosaic of your last 64 days of contributions.",
+  "avatar": "male",
+
   "nowPlaying": [
     {
       "title": "CNF x LLM prompts",

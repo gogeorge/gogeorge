@@ -83,13 +83,11 @@ function streaks(days) {
   return { current, longest };
 }
 
-async function topLanguages(login, token) {
-  const repos = await gh(`/users/${login}/repos?per_page=100&sort=pushed`, token);
-  const owned = repos.filter((r) => !r.fork && !r.archived);
+async function topLanguages(owned, token) {
   const totals = {};
   // Language byte counts need one call per repo; cap it to stay well inside
-  // the rate limit on the 20 most recently pushed repos.
-  for (const r of owned.slice(0, 20)) {
+  // the rate limit on the most recently pushed repos.
+  for (const r of owned.slice(0, 15)) {
     try {
       const langs = await gh(`/repos/${r.full_name}/languages`, token);
       for (const [name, bytes] of Object.entries(langs)) {
@@ -100,35 +98,53 @@ async function topLanguages(login, token) {
     }
   }
   const sum = Object.values(totals).reduce((a, b) => a + b, 0) || 1;
-  return {
-    languages: Object.entries(totals)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
-      .map(([name, bytes]) => ({ name, pct: (bytes / sum) * 100 })),
-    repos: owned,
-    stars: owned.reduce((a, r) => a + r.stargazers_count, 0),
-  };
+  return Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name, bytes]) => ({ name, pct: (bytes / sum) * 100 }));
 }
 
-async function recentPushes(login, token) {
-  const events = await gh(`/users/${login}/events/public?per_page=100`, token);
-  const out = [];
-  const counts = {};
-  for (const e of events) {
-    if (e.type !== 'PushEvent') continue;
-    const day = e.created_at.slice(0, 10);
-    counts[day] = (counts[day] ?? 0) + (e.payload.commits?.length ?? 0);
-    for (const c of e.payload.commits ?? []) {
-      if (out.length < 4) {
-        out.push({
-          repo: e.repo.name.split('/')[1] ?? e.repo.name,
-          message: c.message.split('\n')[0],
-          date: day,
+/**
+ * Recent commits, read from the repos themselves rather than the events feed.
+ * PushEvent payloads routinely arrive without their `commits` array, so the
+ * events API is not a dependable source for commit messages.
+ */
+async function recentCommits(owned, login, token) {
+  const found = [];
+  for (const r of owned.slice(0, 4)) {
+    try {
+      const commits = await gh(
+        `/repos/${r.full_name}/commits?author=${login}&per_page=3`,
+        token
+      );
+      for (const c of commits) {
+        found.push({
+          repo: r.name,
+          message: c.commit.message.split('\n')[0],
+          date: (c.commit.author?.date ?? c.commit.committer?.date ?? '').slice(0, 10),
         });
       }
+    } catch {
+      /* empty repo, or no commits by this author */
     }
   }
-  return { commits: out, eventCounts: counts };
+  return found.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+}
+
+/** Only needed to approximate a calendar when there is no token for GraphQL. */
+async function eventDayCounts(login, token) {
+  try {
+    const events = await gh(`/users/${login}/events/public?per_page=100`, token);
+    const counts = {};
+    for (const e of events) {
+      if (e.type !== 'PushEvent') continue;
+      const day = e.created_at.slice(0, 10);
+      counts[day] = (counts[day] ?? 0) + (e.payload.commits?.length ?? 1);
+    }
+    return counts;
+  } catch {
+    return {};
+  }
 }
 
 function demo() {
@@ -171,10 +187,15 @@ function demo() {
 
 export async function collect(login, token) {
   try {
-    const [user, langs, pushes] = await Promise.all([
+    const [user, repos] = await Promise.all([
       gh(`/users/${login}`, token),
-      topLanguages(login, token),
-      recentPushes(login, token),
+      gh(`/users/${login}/repos?per_page=100&sort=pushed`, token),
+    ]);
+    const owned = repos.filter((r) => !r.fork && !r.archived);
+
+    const [languages, commits] = await Promise.all([
+      topLanguages(owned, token),
+      recentCommits(owned, login, token),
     ]);
 
     let days;
@@ -198,7 +219,7 @@ export async function collect(login, token) {
     }
 
     if (!days) {
-      days = gridFromCounts(pushes.eventCounts);
+      days = gridFromCounts(await eventDayCounts(login, token));
       total = days.reduce((a, d) => a + d.count, 0);
     }
 
@@ -208,13 +229,13 @@ export async function collect(login, token) {
       name: user.name || user.login,
       repoCount: user.public_repos,
       followers: user.followers,
-      stars: langs.stars,
+      stars: owned.reduce((a, x) => a + x.stargazers_count, 0),
       since: user.created_at,
       days,
       total,
       ...streaks(days),
-      languages: langs.languages,
-      commits: pushes.commits,
+      languages,
+      commits,
     };
   } catch (err) {
     console.warn(`! GitHub fetch failed (${err.message}) - using demo data`);
