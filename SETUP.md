@@ -40,11 +40,35 @@ Open `content.json`. This is the only file you edit routinely.
 ```jsonc
 {
   "handle": "octocat",          // your GitHub username — also used to fetch your stats
+  "theme": "lime",              // shell colour, see below
   "avatar": "male",             // "male", "female", or "activity"
   "nowPlaying": [ ... ],        // the rotating headline on the top screen
   "status": [ ... ]             // the three-row list below it
 }
 ```
+
+### Picking a console
+
+**`theme`** sets the plastic:
+
+| | |
+|---|---|
+| `lime` | the DS Lite green this is a tribute to (default) |
+| `noir` | black |
+| `snow` | white |
+| `cobalt` | blue |
+| `coral` | pink |
+
+**`avatar`** sets the profile picture in the cart slot: `male`, `female`, or
+`activity` for a mosaic of your last 64 days of contributions.
+
+The two screens are separate from the shell colour — they follow whether the
+person looking at your profile has GitHub in light or dark mode. That's why
+every theme is rendered twice, and why a black console can show a light UI or a
+white console a dark one. You don't choose that; your visitors do.
+
+Run `npm run preview` and open `preview.html` to see all five shells in both
+modes and both avatars on one page, with your current pick outlined in blue.
 
 **Mind the character budgets.** The screens are 420 units wide and the font is
 5 pixels, so space is genuinely tight. Anything too long is shortened with an
@@ -138,10 +162,12 @@ render it immediately rather than waiting for the 06:00 UTC schedule.
 
 ## Customising further
 
-**Colours.** `scripts/lib/theme.mjs` holds both palettes. The shell is
-`shell`/`shellEdge`/`shellLine`; change those three for a different console
-colour. One rule: keep `levels[0]` clearly lighter than `tile`, or empty days in
-the contribution graph vanish into the panel behind them.
+**Colours.** `scripts/lib/theme.mjs` is split in two: `screens` holds the dark
+and light screen palettes, `shells` holds one entry per console colour. To add
+your own shell, copy an existing preset, rename it, and use that name in
+`content.json` — an unknown name fails the build and lists the valid ones. One
+rule if you touch the screen palettes: keep `levels[0]` clearly lighter than
+`tile`, or empty days in the contribution graph vanish into the panel.
 
 **Avatars.** `scripts/lib/sprites.mjs` defines them as 24×24 ASCII art — `H`
 hair, `S` skin, `K` ink, `N` nose, `R` shirt, `.` transparent. Edit the grid or
@@ -155,6 +181,24 @@ Anything without a glyph is silently dropped rather than rendered as `?`.
 **Layout.** `scripts/lib/ds.mjs` has the shell geometry at the top and the two
 screen layouts below. Both screens are 420×315 with the origin at the top-left
 of the screen. Text `y` is the top of the cap box, not a baseline.
+
+### Two rules that keep it cheap to render
+
+A browser rasterises an `<img>`-embedded SVG as a single texture, so *any*
+change anywhere redraws the whole image. That makes two things unusually
+expensive, and both were learned the hard way here — an earlier version made
+laptop fans audible just by sitting on a profile page.
+
+**No filters.** `feDropShadow` and friends recompute across the element's whole
+bounding box on every redraw. The shell shadow is three offset rounded rects
+instead. If you want a glow, fake it with stacked shapes.
+
+**Animate discretely, never continuously.** A crossfade or a sweeping motion
+interpolates on every frame, pinning a core at 60fps forever. Every animation
+in this file uses `calcMode="discrete"` — the clock's second hand ticks once a
+second instead of sweeping, panels snap instead of fading. The result repaints
+about once a second rather than sixty times, and it looks *more* like a real
+handheld, not less.
 
 ---
 

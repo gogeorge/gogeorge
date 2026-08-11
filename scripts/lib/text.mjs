@@ -36,10 +36,6 @@ export class Font {
     return ([...str].length * ADVANCE - 1) * scale;
   }
 
-  lineHeight(scale = 1) {
-    return GLYPH_H * scale;
-  }
-
   /**
    * Largest scale from `scales` (biggest first) at which `str` fits `maxWidth`.
    * Lets content.json hold a long title without it ever running off the screen.
@@ -75,10 +71,9 @@ export class Font {
 
   /** Word-wrap into lines that fit `maxWidth`, then draw them. */
   paragraph(str, x, y, { scale = 1, leading = 3, maxWidth = 9999, ...rest } = {}) {
-    const words = str.split(' ');
     const lines = [];
     let line = '';
-    for (const w of words) {
+    for (const w of str.split(' ')) {
       const next = line ? line + ' ' + w : w;
       if (this.measure(next, scale) > maxWidth && line) {
         lines.push(line);
@@ -87,11 +82,7 @@ export class Font {
     }
     if (line) lines.push(line);
     const step = (GLYPH_H + leading) * scale;
-    return {
-      svg: lines.map((l, i) => this.draw(l, x, y + i * step, { scale, ...rest })).join(''),
-      height: lines.length * step,
-      lines: lines.length,
-    };
+    return lines.map((l, i) => this.draw(l, x, y + i * step, { scale, ...rest })).join('');
   }
 
   /** <defs> content for every glyph actually used. Call last. */

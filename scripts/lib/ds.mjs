@@ -46,54 +46,44 @@ const circle = (cx, cy, rad, a = '', kids = '') =>
 /** <animate> shorthand. */
 const an = (attr, attrs) => `<animate attributeName="${attr}" ${attrs}/>`;
 
-/** Wrap arbitrary markup in a group whose opacity pulses. */
-const pulse = (svg, values, dur) =>
-  `<g>${svg}${an('opacity', `values="${values}" dur="${dur}s" repeatCount="indefinite"`)}</g>`;
+/**
+ * Merge a list of [x, y, w, h] into one path.
+ *
+ * This image is rasterised as a whole on every animation frame, so element
+ * count is the thing that costs. Collapsing the 371-cell contribution grid
+ * into one path per colour is worth far more than any byte saving.
+ */
+const rectsPath = (rects) =>
+  rects.map(([x, y, w, h]) => `M${r(x)} ${r(y)}h${r(w)}v${r(h)}h-${r(w)}z`).join('');
 
 /**
  * Wrap markup in a group that is visible for one slot of an N-slot rotation.
  *
- * The first slot carries a static opacity of 1 so that if SMIL never runs -
- * a still capture, a converter, a reader that ignores animation - the panel
- * shows its first entry instead of going blank.
+ * The swap is discrete rather than a crossfade. A fade interpolates opacity on
+ * every frame it runs, which forces the browser to re-rasterise the whole
+ * image; a discrete step repaints only at the moment the panel changes.
+ *
+ * Slot 0 also carries a static opacity of 1, so if SMIL never runs - a still
+ * capture, a converter, a reader that ignores animation - the panel shows its
+ * first entry instead of going blank.
  */
 function slotFade(svg, index, count, slotSeconds) {
   if (count <= 1) return svg;
-  const dur = count * slotSeconds;
-  const share = 1 / count;
-
-  // Slot 0 holds its slot from t=0 and fades back in at the end of the loop,
-  // so the very first painted frame already shows content.
-  if (index === 0) {
-    const keyTimes = `0;${(share - 0.02).toFixed(3)};${share.toFixed(3)};0.97;1`;
-    return (
-      `<g opacity="1">${svg}` +
-      an('opacity', `values="1;1;0;0;1" keyTimes="${keyTimes}" dur="${dur}s" repeatCount="indefinite"`) +
-      `</g>`
-    );
-  }
-
-  const keyTimes = `0;0.03;${(share - 0.02).toFixed(3)};${share.toFixed(3)};1`;
+  const values = Array.from({ length: count }, (_, i) => (i === index ? 1 : 0)).join(';');
+  const keyTimes = Array.from({ length: count }, (_, i) => r(i / count)).join(';');
   return (
-    `<g opacity="0">${svg}` +
-    an('opacity', `values="0;1;1;0;0" keyTimes="${keyTimes}" dur="${dur}s" begin="${index * slotSeconds}s" repeatCount="indefinite"`) +
+    `<g opacity="${index === 0 ? 1 : 0}">${svg}` +
+    an(
+      'opacity',
+      `values="${values}" keyTimes="${keyTimes}" calcMode="discrete" ` +
+        `dur="${count * slotSeconds}s" repeatCount="indefinite"`
+    ) +
     `</g>`
   );
 }
 
-/**
- * A bar that grows to `finalW`. The static width is already the final value,
- * so a viewer without SMIL sees a filled bar rather than an empty trough.
- */
-const growBar = (x, y, finalW, h, fill, delay = 0) =>
-  rect(
-    x,
-    y,
-    Math.max(1, finalW),
-    h,
-    `fill="${fill}" rx="1"`,
-    an('width', `values="1;${r(Math.max(1, finalW))}" dur="1.2s" begin="${delay}s" fill="freeze"`)
-  );
+/** A filled meter bar. Static - the grow-in animation cost more than it gave. */
+const bar = (x, y, w, h, fill) => rect(x, y, Math.max(1, w), h, `fill="${fill}" rx="1"`);
 
 const nf = new Intl.NumberFormat('en-US');
 
@@ -127,9 +117,7 @@ function topScreen(f, d, content, t, now) {
   g.push(rrect(SCREEN_W - 40, 5, 12, 10, 1, `fill="${t.titleInk}" opacity="0.6"`));
   g.push(rrect(SCREEN_W - 24, 6, 18, 8, 1, `fill="none" stroke="${t.titleInk}" opacity="0.8"`));
   g.push(rect(SCREEN_W - 6, 8, 2, 4, `fill="${t.titleInk}" opacity="0.8"`));
-  g.push(
-    rect(SCREEN_W - 22, 8, 14, 4, `fill="${t.led}"`, an('opacity', 'values="1;1;0.35;1" dur="4s" repeatCount="indefinite"'))
-  );
+  g.push(rect(SCREEN_W - 22, 8, 14, 4, `fill="${t.led}"`));
 
   // Two columns: device widgets on the left, everything you wrote on the right.
   const COL_L = { x: 16, w: 112 };
@@ -166,12 +154,18 @@ function topScreen(f, d, content, t, now) {
 
   g.push(hand(22, 4, t.hand, hourAngle));
   g.push(hand(32, 3, t.hand, minAngle));
+
   // The second hand is the one thing on the device that is genuinely live.
+  // It steps once per second rather than sweeping: a real clock ticks, and a
+  // discrete step repaints the image once a second instead of sixty times.
+  const ticks = Array.from(
+    { length: 60 },
+    (_, i) => `${r((secAngle + i * 6) % 360)} ${r(cx)} ${r(cy)}`
+  ).join(';');
   g.push(
     `<g>${rect(cx - 1, cy - 36, 2, 43, `fill="${t.handSecond}"`)}` +
-      `<animateTransform attributeName="transform" type="rotate" ` +
-      `from="${r(secAngle)} ${r(cx)} ${r(cy)}" to="${r(secAngle + 360)} ${r(cx)} ${r(cy)}" ` +
-      `dur="60s" repeatCount="indefinite"/></g>`
+      `<animateTransform attributeName="transform" type="rotate" values="${ticks}" ` +
+      `calcMode="discrete" dur="60s" repeatCount="indefinite"/></g>`
   );
   g.push(circle(cx, cy, 3, `fill="${t.ink}"`));
 
@@ -180,12 +174,13 @@ function topScreen(f, d, content, t, now) {
   g.push(f.draw('LAST 30D', COL_L.x + 6, 154, { scale: 2, fill: t.inkDim }));
   const last30 = d.days.slice(-30);
   const peak = Math.max(1, ...last30.map((x) => x.count));
+  const bars = { on: [], off: [] };
   last30.forEach((day, i) => {
     const h = Math.max(1, (day.count / peak) * 34);
-    g.push(
-      rect(COL_L.x + 8 + i * 3.2, 216 - h, 2.4, h, `fill="${day.count ? t.accent2 : t.bar}"`)
-    );
+    bars[day.count ? 'on' : 'off'].push([COL_L.x + 8 + i * 3.2, 216 - h, 2.4, h]);
   });
+  g.push(`<path d="${rectsPath(bars.off)}" fill="${t.bar}"/>`);
+  g.push(`<path d="${rectsPath(bars.on)}" fill="${t.accent2}"/>`);
   g.push(rect(COL_L.x + 8, 217, 96, 1, `fill="${t.tileEdge}"`));
 
   // --- play time -----------------------------------------------------------
@@ -205,7 +200,7 @@ function topScreen(f, d, content, t, now) {
   const barW = COL_L.w - 20;
   g.push(rect(COL_L.x + 8, 276, barW, 10, `fill="${t.bar}" rx="1"`));
   const pct = Math.min(1, months / 180); // 15 years fills the bar
-  g.push(growBar(COL_L.x + 9, 277, barW * pct - 2, 8, t.accent2));
+  g.push(bar(COL_L.x + 9, 277, barW * pct - 2, 8, t.accent2));
 
   // --- now playing ---------------------------------------------------------
   g.push(tile(COL_R.x, 30, COL_R.w, 112, t));
@@ -226,7 +221,7 @@ function topScreen(f, d, content, t, now) {
     g.push(
       slotFade(
         f.draw(ellipsis(title, scale === 3 ? 13 : 20), COL_R.x + inset, 66, { scale, fill: t.ink }) +
-          sub.svg,
+          sub,
         i,
         slots.length,
         5
@@ -234,33 +229,12 @@ function topScreen(f, d, content, t, now) {
     );
   });
 
-  // blinking cursor in the corner of the card
-  g.push(
-    rect(
-      COL_R.x + COL_R.w - 18,
-      120,
-      8,
-      14,
-      `fill="${t.accent}"`,
-      an('opacity', 'values="1;1;0;0" dur="1.1s" repeatCount="indefinite"')
-    )
-  );
+  g.push(rect(COL_R.x + COL_R.w - 18, 120, 8, 14, `fill="${t.accent}"`));
 
   // --- status list ---------------------------------------------------------
   g.push(tile(COL_R.x, 146, COL_R.w, 156, t));
   content.status.slice(0, 3).forEach((row, i) => {
     const y = 151 + i * 49;
-    // the highlight idles down the list the way a DS cursor does
-    g.push(
-      rect(
-        COL_R.x + 1,
-        y - 2,
-        COL_R.w - 2,
-        47,
-        `fill="${t.accent}" opacity="0"`,
-        an('opacity', `values="0;0.12;0" dur="9s" begin="${i * 3}s" repeatCount="indefinite"`)
-      )
-    );
     g.push(f.draw(clean(row.label).toUpperCase(), COL_R.x + inset, y, { scale: 2, fill: t.accent }));
     g.push(
       f.paragraph(ellipsis(row.value, 40), COL_R.x + inset, y + 16, {
@@ -268,7 +242,7 @@ function topScreen(f, d, content, t, now) {
         leading: 0.5,
         maxWidth: textW,
         fill: t.ink,
-      }).svg
+      })
     );
   });
 
@@ -321,9 +295,7 @@ function bottomScreen(f, d, content, t) {
     const y = 108 + i * 18;
     const w = 176;
     g.push(rect(20, y, w, 16, `fill="${t.bar}" rx="1"`));
-    g.push(
-      `<g opacity="0.4">${growBar(20, y, (w * l.pct) / 100, 16, t.accent, 0.3 + i * 0.15)}</g>`
-    );
+    g.push(`<g opacity="0.4">${bar(20, y, (w * l.pct) / 100, 16, t.accent)}</g>`);
     g.push(f.draw(ellipsis(l.name, 13).toUpperCase(), 24, y + 4, { scale: 2, fill: t.ink }));
     g.push(f.draw(`${Math.round(l.pct)}%`, 192, y + 4, { scale: 2, fill: t.inkDim, align: 'right' }));
   });
@@ -348,24 +320,18 @@ function bottomScreen(f, d, content, t) {
   t.levels.forEach((c, i) => g.push(rect(306 + i * 8, 175, 6, 6, `fill="${c}" rx="1"`)));
   g.push(f.draw('MORE', 350, 174, { scale: 2, fill: t.inkDim }));
 
+  // One path per intensity level rather than 371 individual cells.
   const gx = 20;
   const gy = 192;
+  const cells = t.levels.map(() => []);
   d.days.forEach((day, i) => {
     const wk = Math.floor(i / 7);
     if (wk > 52) return;
-    g.push(rect(gx + wk * 7, gy + (i % 7) * 7, 6, 6, `fill="${t.levels[level(day.count)]}" rx="1"`));
+    cells[level(day.count)].push([gx + wk * 7, gy + (i % 7) * 7, 6, 6]);
   });
-  // a soft scanline sweeping across the grid, like the DS menu shimmer
-  g.push(
-    rect(
-      gx,
-      gy,
-      40,
-      49,
-      'fill="url(#sweep)"',
-      an('x', `values="${gx - 40};${gx + 380}" dur="4.5s" repeatCount="indefinite"`)
-    )
-  );
+  cells.forEach((group, lv) => {
+    if (group.length) g.push(`<path d="${rectsPath(group)}" fill="${t.levels[lv]}"/>`);
+  });
 
   // --- latest push ---------------------------------------------------------
   g.push(tile(10, 250, 400, 38, t));
@@ -381,14 +347,14 @@ function bottomScreen(f, d, content, t) {
     g.push(slotFade(inner, i, commits.length, 4));
   });
 
-  // --- selection ring, cycling across the four tiles -----------------------
+  // Selection ring, hopping between the four tiles. The marching-ants dash
+  // animation was removed: it repainted the whole image sixty times a second.
   g.push(
     `<rect x="8" y="2" width="404" height="78" rx="4" fill="none" stroke="${t.accent}" stroke-width="2" stroke-dasharray="5 3">` +
       anim('x', '8;8;212;8', 12) +
       anim('y', '2;80;80;166', 12) +
       anim('width', '404;200;200;404', 12) +
       anim('height', '78;86;86;82', 12) +
-      `<animate attributeName="stroke-dashoffset" values="0;-8" dur="0.5s" repeatCount="indefinite"/>` +
       `</rect>`
   );
 
@@ -403,15 +369,11 @@ function bottomScreen(f, d, content, t) {
     );
   }
   g.push(
-    pulse(
-      f.draw('TOUCH SCREEN TO CONTINUE', SCREEN_W / 2, fy + 2, {
-        scale: 2,
-        fill: t.inkDim,
-        align: 'center',
-      }),
-      '1;1;0.15;1',
-      2.4
-    )
+    f.draw('TOUCH SCREEN TO CONTINUE', SCREEN_W / 2, fy + 2, {
+      scale: 2,
+      fill: t.inkDim,
+      align: 'center',
+    })
   );
   // settings gear
   g.push(circle(398, fy + 7, 5, `fill="none" stroke="${t.inkDim}"`));
@@ -431,6 +393,14 @@ const anim = (attr, values, dur) =>
 // ------------------------------------------------------------------- shell --
 function shell(f, t) {
   const g = [];
+
+  // Fake soft shadow: three offset rounded rects instead of feDropShadow.
+  // A real blur filter has to be recomputed across the whole 780x884 canvas
+  // whenever anything on the device animates, which is far too expensive.
+  for (const [dy, o] of [[8, 0.05], [5, 0.06], [2, 0.07]]) {
+    g.push(rrect(BODY_X + 4, LID_Y + dy, BODY_W - 8, LID_H, 26, `fill="#000" opacity="${o}"`));
+    g.push(rrect(BODY_X + 4, BASE_Y + dy, BODY_W - 8, BASE_H, 26, `fill="#000" opacity="${o}"`));
+  }
 
   // lid
   g.push(rrect(BODY_X, LID_Y, BODY_W, LID_H, 26, `fill="url(#shell)" stroke="${t.shellLine}"`));
@@ -458,22 +428,14 @@ function shell(f, t) {
   g.push(rrect(BODY_X, HINGE_Y - 6, 150, HINGE_H + 12, 14, `fill="url(#shell)" stroke="${t.shellLine}"`));
   g.push(rrect(BODY_X + BODY_W - 150, HINGE_Y - 6, 150, HINGE_H + 12, 14, `fill="url(#shell)" stroke="${t.shellLine}"`));
 
-  // Mic hole and label, kept in the flat channel well clear of the stylus.
-  g.push(circle(300, 422, 3.5, `fill="${t.shellLine}" opacity="0.75"`));
-  g.push(circle(300, 422, 1.5, `fill="${t.bezel}" opacity="0.5"`));
-  g.push(f.draw('MIC', 312, 417, { scale: 2, fill: t.shellInk, opacity: 0.7 }));
+  // Mic hole and label, centred in the flat channel between the knuckles.
+  g.push(circle(370, 422, 3.5, `fill="${t.shellLine}" opacity="0.75"`));
+  g.push(circle(370, 422, 1.5, `fill="${t.bezel}" opacity="0.5"`));
+  g.push(f.draw('MIC', 382, 417, { scale: 2, fill: t.shellInk, opacity: 0.7 }));
 
-  // Stylus, seated in its slot between the two hinge knuckles (170..610).
-  const sy = 417;
-  g.push(rrect(360, sy - 3, 246, 16, 8, `fill="${t.shellLine}" opacity="0.18"`)); // slot recess
-  g.push(rrect(372, sy, 222, 10, 5, `fill="${t.shellEdge}" stroke="${t.shellLine}"`));
-  g.push(rrect(372, sy, 26, 10, 5, `fill="${t.shellLine}" opacity="0.45"`)); // tip
-  g.push(rrect(560, sy, 34, 10, 5, `fill="${t.shellLine}" opacity="0.25"`)); // grip
-
-  // power LED
-  g.push(
-    rrect(736, 412, 8, 20, 4, `fill="${t.led}"`, an('opacity', 'values="1;0.45;1" dur="3s" repeatCount="indefinite"'))
-  );
+  // Power LED. Static: this sat inside the drop-shadow filter, so pulsing it
+  // re-ran a full-device Gaussian blur on every frame.
+  g.push(rrect(736, 412, 8, 20, 4, `fill="${t.led}"`));
 
   // base
   g.push(rrect(BODY_X, BASE_Y, BODY_W, BASE_H, 26, `fill="url(#shell)" stroke="${t.shellLine}"`));
@@ -526,8 +488,8 @@ export function renderDS(d, content, t, now = new Date()) {
   const bottom = bottomScreen(f, d, content, t);
   const chrome = shell(f, t);
 
-  const screenBody = (inner, clipId) =>
-    `<g clip-path="url(#${clipId})">${rect(0, 0, SCREEN_W, SCREEN_H, `fill="${t.screen}"`)}` +
+  const screenBody = (inner) =>
+    `<g clip-path="url(#screen)">${rect(0, 0, SCREEN_W, SCREEN_H, `fill="${t.screen}"`)}` +
     rect(0, 0, SCREEN_W, SCREEN_H, 'fill="url(#grid)"') +
     inner +
     `</g>`;
@@ -550,23 +512,14 @@ export function renderDS(d, content, t, now = new Date()) {
   <linearGradient id="titlebar" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="${t.titleBar[1]}"/><stop offset="1" stop-color="${t.titleBar[0]}"/>
   </linearGradient>
-  <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="${t.accent}" stop-opacity="0"/>
-    <stop offset="0.5" stop-color="${t.accent}" stop-opacity="0.14"/>
-    <stop offset="1" stop-color="${t.accent}" stop-opacity="0"/>
-  </linearGradient>
   <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
     <path d="M10 0H0V10" fill="none" stroke="${t.grid}" stroke-width="1"/>
   </pattern>
-  <clipPath id="clipTop"><rect width="${SCREEN_W}" height="${SCREEN_H}"/></clipPath>
-  <clipPath id="clipBottom"><rect width="${SCREEN_W}" height="${SCREEN_H}"/></clipPath>
-  <filter id="drop" x="-10%" y="-10%" width="120%" height="120%">
-    <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity="0.28"/>
-  </filter>
+  <clipPath id="screen"><rect width="${SCREEN_W}" height="${SCREEN_H}"/></clipPath>
   ${f.defs()}
 </defs>
-<g filter="url(#drop)">${chrome}</g>
-<g transform="translate(${TOP_SCREEN.x} ${TOP_SCREEN.y})">${screenBody(top, 'clipTop')}</g>
-<g transform="translate(${BOT_SCREEN.x} ${BOT_SCREEN.y})">${screenBody(bottom, 'clipBottom')}</g>
+${chrome}
+<g transform="translate(${TOP_SCREEN.x} ${TOP_SCREEN.y})">${screenBody(top)}</g>
+<g transform="translate(${BOT_SCREEN.x} ${BOT_SCREEN.y})">${screenBody(bottom)}</g>
 </svg>`;
 }

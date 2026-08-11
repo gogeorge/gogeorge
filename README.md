@@ -43,10 +43,22 @@ defines a 5×7 pixel font by hand, each glyph compiled to an SVG `<path>` in `<d
 and stamped out with `<use>`. Genuinely pixelated, identical for everyone, and
 cheap enough that ~700 characters of text costs about 30 KB.
 
-**Nothing animates from empty.** Every bar's static width is already its final
-value and the first slot of each rotation starts visible, so if animation ever
-gets stripped or the image is captured as a still, the screens read as finished
-rather than blank.
+**Every animation is discrete.** A browser rasterises an embedded SVG as one
+texture, so anything that moves continuously — a crossfade, a sweeping second
+hand — redraws the entire console 60 times a second. An early version made
+laptop fans audible. Now the second hand *ticks*, panels snap, and the whole
+thing repaints about once a second. It reads as more of a real handheld, not
+less. There are no filters either: the shadow is three offset rectangles,
+because `feDropShadow` recomputes a full-canvas blur on every repaint.
+
+**Nothing renders from empty.** Bars are drawn at their final width and the
+first slot of each rotation starts visible, so if animation is stripped or the
+image is captured as a still, the screens read as finished rather than blank.
+
+Five shell colours (`lime`, `noir`, `snow`, `cobalt`, `coral`), two avatars, and
+screens that follow whichever theme the visitor has GitHub set to — so a black
+console can show a light UI, or a white one a dark UI. All of it is two lines in
+`content.json`.
 
 | | |
 |---|---|
