@@ -1,0 +1,35 @@
+{
+  "_comment": "Everything the DS says about you. Edit this, run `npm run build`, commit. Keep it short — the screens are 420px wide and the font is 5px.",
+
+  "handle": "gogeorge",
+
+  "nowPlaying": [
+    {
+      "title": "CNF x LLM prompts",
+      "sub": "Grammars for system prompt structure"
+    },
+    {
+      "title": "UI components",
+      "sub": "Open source contributions welcome"
+    },
+    {
+      "title": "Intl. Business Mgmt",
+      "sub": "Developer by day, designer by night"
+    }
+  ],
+
+  "status": [
+    {
+      "label": "Researching",
+      "value": "Language, CNF, and LLM system prompts"
+    },
+    {
+      "label": "Collab",
+      "value": "Open source UI component work"
+    },
+    {
+      "label": "Work",
+      "value": "Open for remote and freelance"
+    }
+  ]
+}
