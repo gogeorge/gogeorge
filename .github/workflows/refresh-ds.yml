@@ -32,7 +32,6 @@ jobs:
       - name: Render both themes
         env:
           # GH_PAT (classic, read:user) unlocks the real contribution calendar.
-          # Without it the build still runs and approximates from public events.
           GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           GH_LOGIN: ${{ github.repository_owner }}
         run: node scripts/build.mjs
