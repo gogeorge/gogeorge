@@ -34,10 +34,12 @@ async function loadDotEnv(path) {
 }
 
 const env = { ...process.env, ...(await loadDotEnv(join(root, '.env')))};
-const login = env.GH_LOGIN || env.GITHUB_LOGIN || 'gogeorge';
 const token = env.GH_TOKEN || env.GITHUB_TOKEN || '';
 
 const content = JSON.parse(await readFile(join(root, 'content.json'), 'utf8'));
+// GH_LOGIN wins (the workflow sets it from the repo owner); otherwise fall back
+// to the handle in content.json, so a fresh copy works with nothing configured.
+const login = env.GH_LOGIN || env.GITHUB_LOGIN || content.handle;
 const data = await collect(login, token);
 console.log(
   `· data source: ${data.source}  ` +
@@ -56,14 +58,31 @@ for (const key of ['dark', 'light']) {
 
 // A throwaway page for eyeballing both themes side by side: `npm run preview`.
 if (process.argv.includes('--preview')) {
+  const { avatars, drawSprite } = await import('./lib/sprites.mjs');
+  const swatch = (name) =>
+    `<figure><svg viewBox="0 0 24 24" width="120" height="120">${drawSprite(
+      avatars[name],
+      0,
+      0,
+      1
+    )}</svg><figcaption>"avatar": "${name}"</figcaption></figure>`;
+
   const page = `<!doctype html><meta charset="utf-8"><title>DS preview</title>
 <style>
-  body{margin:0;display:flex;gap:24px;padding:24px;background:#0d1117;font:14px system-ui}
-  div{flex:1}img{width:100%;display:block}
-  div:last-child{background:#fff;padding:12px;border-radius:8px}
+  body{margin:0;padding:24px;background:#0d1117;color:#c9d6e3;font:14px system-ui}
+  .themes{display:flex;gap:24px}
+  .themes>div{flex:1}img{width:100%;display:block}
+  .themes>div:last-child{background:#fff;padding:12px;border-radius:8px}
+  .avatars{display:flex;gap:24px;margin-bottom:24px}
+  figure{margin:0;background:#141b23;padding:12px;border-radius:8px;text-align:center}
+  figcaption{margin-top:8px;font-family:ui-monospace,monospace;font-size:12px;color:#6f7f8e}
+  svg{image-rendering:pixelated;background:#0d1117}
 </style>
-<div><img src="assets/ds-dark.svg"></div>
-<div><img src="assets/ds-light.svg"></div>`;
+<div class="avatars">${swatch('male')}${swatch('female')}</div>
+<div class="themes">
+  <div><img src="assets/ds-dark.svg?t=${Date.now()}"></div>
+  <div><img src="assets/ds-light.svg?t=${Date.now()}"></div>
+</div>`;
   await writeFile(join(root, 'preview.html'), page);
   console.log('· preview.html');
 }

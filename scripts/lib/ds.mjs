@@ -1,4 +1,5 @@
 import { Font, clean, ellipsis, escapeXml, round as r } from './text.mjs';
+import { avatars, drawSprite } from './sprites.mjs';
 
 /**
  * Draws the whole handheld.
@@ -49,10 +50,29 @@ const an = (attr, attrs) => `<animate attributeName="${attr}" ${attrs}/>`;
 const pulse = (svg, values, dur) =>
   `<g>${svg}${an('opacity', `values="${values}" dur="${dur}s" repeatCount="indefinite"`)}</g>`;
 
-/** Wrap markup in a group that is visible for one slot of an N-slot rotation. */
+/**
+ * Wrap markup in a group that is visible for one slot of an N-slot rotation.
+ *
+ * The first slot carries a static opacity of 1 so that if SMIL never runs -
+ * a still capture, a converter, a reader that ignores animation - the panel
+ * shows its first entry instead of going blank.
+ */
 function slotFade(svg, index, count, slotSeconds) {
+  if (count <= 1) return svg;
   const dur = count * slotSeconds;
   const share = 1 / count;
+
+  // Slot 0 holds its slot from t=0 and fades back in at the end of the loop,
+  // so the very first painted frame already shows content.
+  if (index === 0) {
+    const keyTimes = `0;${(share - 0.02).toFixed(3)};${share.toFixed(3)};0.97;1`;
+    return (
+      `<g opacity="1">${svg}` +
+      an('opacity', `values="1;1;0;0;1" keyTimes="${keyTimes}" dur="${dur}s" repeatCount="indefinite"`) +
+      `</g>`
+    );
+  }
+
   const keyTimes = `0;0.03;${(share - 0.02).toFixed(3)};${share.toFixed(3)};1`;
   return (
     `<g opacity="0">${svg}` +
@@ -60,6 +80,20 @@ function slotFade(svg, index, count, slotSeconds) {
     `</g>`
   );
 }
+
+/**
+ * A bar that grows to `finalW`. The static width is already the final value,
+ * so a viewer without SMIL sees a filled bar rather than an empty trough.
+ */
+const growBar = (x, y, finalW, h, fill, delay = 0) =>
+  rect(
+    x,
+    y,
+    Math.max(1, finalW),
+    h,
+    `fill="${fill}" rx="1"`,
+    an('width', `values="1;${r(Math.max(1, finalW))}" dur="1.2s" begin="${delay}s" fill="freeze"`)
+  );
 
 const nf = new Intl.NumberFormat('en-US');
 
@@ -89,29 +123,34 @@ function topScreen(f, d, content, t, now) {
   g.push(f.draw(stamp, SCREEN_W - 62, 6, { scale: 2, fill: t.titleInk, align: 'right' }));
 
   // little status icons, the way the DS crams them into the corner
-  g.push(rrect(SCREEN_W - 56, 5, 12, 10, 1, `fill="${t.titleInk}" opacity="0.65"`));
-  g.push(rrect(SCREEN_W - 40, 5, 12, 10, 1, `fill="${t.titleInk}" opacity="0.65"`));
-  g.push(f.draw('M', SCREEN_W - 37, 6, { scale: 1, fill: t.titleBar[0] }));
+  g.push(rrect(SCREEN_W - 56, 5, 12, 10, 1, `fill="${t.titleInk}" opacity="0.6"`));
+  g.push(rrect(SCREEN_W - 40, 5, 12, 10, 1, `fill="${t.titleInk}" opacity="0.6"`));
   g.push(rrect(SCREEN_W - 24, 6, 18, 8, 1, `fill="none" stroke="${t.titleInk}" opacity="0.8"`));
   g.push(rect(SCREEN_W - 6, 8, 2, 4, `fill="${t.titleInk}" opacity="0.8"`));
   g.push(
     rect(SCREEN_W - 22, 8, 14, 4, `fill="${t.led}"`, an('opacity', 'values="1;1;0.35;1" dur="4s" repeatCount="indefinite"'))
   );
 
+  // Two columns: device widgets on the left, everything you wrote on the right.
+  const COL_L = { x: 16, w: 112 };
+  const COL_R = { x: 136, w: 268 };
+  const inset = 10;
+  const textW = COL_R.w - inset * 2; // 248 -> 20 chars at scale 2, 13 at scale 3
+
   // --- clock ---------------------------------------------------------------
-  const cx = pad + 59;
-  const cy = 34 + 59;
-  g.push(tile(pad, 34, 118, 118, t));
+  const cx = COL_L.x + COL_L.w / 2;
+  const cy = 86;
+  g.push(tile(COL_L.x, 30, COL_L.w, 112, t));
   for (let i = 0; i < 12; i++) {
     if (i % 3 === 0) continue; // the 12/3/6/9 slots hold numerals instead
     const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-    g.push(rect(cx + Math.cos(a) * 44 - 1.5, cy + Math.sin(a) * 44 - 1.5, 3, 3, `fill="${t.inkDim}"`));
+    g.push(rect(cx + Math.cos(a) * 40 - 1.5, cy + Math.sin(a) * 40 - 1.5, 3, 3, `fill="${t.inkDim}"`));
   }
-  const num = { scale: 3, fill: t.inkDim, opacity: 0.55, align: 'center' };
-  g.push(f.draw('12', cx, cy - 50, num));
-  g.push(f.draw('6', cx, cy + 38, num));
-  g.push(f.draw('3', cx + 42, cy - 12, num));
-  g.push(f.draw('9', cx - 42, cy - 12, num));
+  const num = { scale: 2, fill: t.inkDim, opacity: 0.6, align: 'center' };
+  g.push(f.draw('12', cx, cy - 48, num));
+  g.push(f.draw('6', cx, cy + 32, num));
+  g.push(f.draw('3', cx + 40, cy - 8, num));
+  g.push(f.draw('9', cx - 40, cy - 8, num));
 
   const hourAngle = ((now.getHours() % 12) + now.getMinutes() / 60) * 30;
   const minAngle = now.getMinutes() * 6;
@@ -125,64 +164,81 @@ function topScreen(f, d, content, t, now) {
       `fill="${color}" rx="1"`
     )}${extra}</g>`;
 
-  g.push(hand(26, 4, t.hand, hourAngle));
-  g.push(hand(38, 3, t.hand, minAngle));
+  g.push(hand(22, 4, t.hand, hourAngle));
+  g.push(hand(32, 3, t.hand, minAngle));
   // The second hand is the one thing on the device that is genuinely live.
   g.push(
-    `<g>${rect(cx - 1, cy - 42, 2, 50, `fill="${t.handSecond}"`)}` +
+    `<g>${rect(cx - 1, cy - 36, 2, 43, `fill="${t.handSecond}"`)}` +
       `<animateTransform attributeName="transform" type="rotate" ` +
       `from="${r(secAngle)} ${r(cx)} ${r(cy)}" to="${r(secAngle + 360)} ${r(cx)} ${r(cy)}" ` +
       `dur="60s" repeatCount="indefinite"/></g>`
   );
   g.push(circle(cx, cy, 3, `fill="${t.ink}"`));
 
-  // --- status card ---------------------------------------------------------
-  const sx = 150;
-  const sw = SCREEN_W - sx - pad;
-  g.push(tile(sx, 34, sw, 118, t));
-  content.status.slice(0, 3).forEach((row, i) => {
-    const y = 42 + i * 38;
-    // the highlight sweeps down the list the way a DS cursor idles
+  // --- last 30 days sparkline ----------------------------------------------
+  g.push(tile(COL_L.x, 148, COL_L.w, 74, t));
+  g.push(f.draw('LAST 30D', COL_L.x + 6, 154, { scale: 2, fill: t.inkDim }));
+  const last30 = d.days.slice(-30);
+  const peak = Math.max(1, ...last30.map((x) => x.count));
+  last30.forEach((day, i) => {
+    const h = Math.max(1, (day.count / peak) * 34);
     g.push(
-      rect(
-        sx + 1,
-        y - 3,
-        sw - 2,
-        36,
-        `fill="${t.accent}" opacity="0"`,
-        an('opacity', `values="0;0.10;0" dur="9s" begin="${i * 3}s" repeatCount="indefinite"`)
-      )
+      rect(COL_L.x + 8 + i * 3.2, 216 - h, 2.4, h, `fill="${day.count ? t.accent2 : t.bar}"`)
     );
-    g.push(f.draw(clean(row.label).toUpperCase(), sx + 10, y, { scale: 2, fill: t.accent }));
-    const p = f.paragraph(clean(row.value), sx + 10, y + 20, {
-      scale: 2,
-      leading: 2,
-      maxWidth: sw - 20,
-      fill: t.ink,
-    });
-    g.push(p.svg);
   });
+  g.push(rect(COL_L.x + 8, 217, 96, 1, `fill="${t.tileEdge}"`));
+
+  // --- play time -----------------------------------------------------------
+  g.push(tile(COL_L.x, 228, COL_L.w, 74, t));
+  const since = new Date(d.since);
+  let months =
+    (now.getFullYear() - since.getFullYear()) * 12 + now.getMonth() - since.getMonth();
+  if (now.getDate() < since.getDate()) months -= 1; // don't round a partial month up
+  months = Math.max(0, months);
+  g.push(f.draw('PLAYTIME', COL_L.x + 6, 234, { scale: 2, fill: t.inkDim }));
+  g.push(
+    f.draw(`${Math.floor(months / 12)}Y ${months % 12}M`, COL_L.x + 6, 254, {
+      scale: 2,
+      fill: t.ink,
+    })
+  );
+  const barW = COL_L.w - 20;
+  g.push(rect(COL_L.x + 8, 276, barW, 10, `fill="${t.bar}" rx="1"`));
+  const pct = Math.min(1, months / 180); // 15 years fills the bar
+  g.push(growBar(COL_L.x + 9, 277, barW * pct - 2, 8, t.accent2));
 
   // --- now playing ---------------------------------------------------------
-  const ny = 164;
-  const nw = SCREEN_W - pad * 2;
-  g.push(tile(pad, ny, nw, 96, t));
-  g.push(f.draw('NOW PLAYING', pad + 10, ny + 10, { scale: 2, fill: t.inkDim }));
-  g.push(rect(pad + 10, ny + 30, nw - 20, 1, `fill="${t.tileEdge}"`));
+  g.push(tile(COL_R.x, 30, COL_R.w, 112, t));
+  g.push(f.draw('NOW PLAYING', COL_R.x + inset, 38, { scale: 2, fill: t.inkDim }));
+  g.push(rect(COL_R.x + inset, 58, textW, 1, `fill="${t.tileEdge}"`));
 
   const slots = content.nowPlaying.slice(0, 3);
   slots.forEach((slot, i) => {
-    const inner =
-      f.draw(ellipsis(slot.title, 20), pad + 10, ny + 42, { scale: 3, fill: t.ink }) +
-      f.draw(ellipsis(slot.sub, 33), pad + 10, ny + 72, { scale: 2, fill: t.inkDim });
-    g.push(slotFade(inner, i, slots.length, 5));
+    const title = clean(slot.title);
+    // Long titles drop to the smaller size rather than running off the tile.
+    const scale = f.fitScale(title, textW, [3, 2]);
+    const sub = f.paragraph(ellipsis(slot.sub, 40), COL_R.x + inset, 96, {
+      scale: 2,
+      leading: 0.5,
+      maxWidth: textW,
+      fill: t.inkDim,
+    });
+    g.push(
+      slotFade(
+        f.draw(ellipsis(title, scale === 3 ? 13 : 20), COL_R.x + inset, 66, { scale, fill: t.ink }) +
+          sub.svg,
+        i,
+        slots.length,
+        5
+      )
+    );
   });
 
-  // blinking cursor, bottom-right of the card
+  // blinking cursor in the corner of the card
   g.push(
     rect(
-      SCREEN_W - pad - 18,
-      ny + 72,
+      COL_R.x + COL_R.w - 18,
+      120,
       8,
       14,
       `fill="${t.accent}"`,
@@ -190,27 +246,31 @@ function topScreen(f, d, content, t, now) {
     )
   );
 
-  // --- play time bar -------------------------------------------------------
-  const by = 272;
-  const since = new Date(d.since);
-  const months = Math.max(0, (now.getFullYear() - since.getFullYear()) * 12 + now.getMonth() - since.getMonth());
-  const label = `${Math.floor(months / 12)}Y ${months % 12}M ON GITHUB`;
-  g.push(f.draw('PLAY TIME', pad, by, { scale: 2, fill: t.inkDim }));
-  const barX = pad + 116;
-  const barW = SCREEN_W - pad - barX;
-  g.push(rect(barX, by + 2, barW, 12, `fill="${t.bar}" rx="1"`));
-  const pct = Math.min(1, months / 120); // 10 years fills the bar
-  g.push(
-    rect(
-      barX + 1,
-      by + 3,
-      1,
-      10,
-      `fill="${t.accent2}" rx="1"`,
-      an('width', `values="1;${r(Math.max(1, barW * pct - 2))}" dur="1.6s" fill="freeze"`)
-    )
-  );
-  g.push(f.draw(label, pad, by + 20, { scale: 2, fill: t.inkDim, opacity: 0.75 }));
+  // --- status list ---------------------------------------------------------
+  g.push(tile(COL_R.x, 146, COL_R.w, 156, t));
+  content.status.slice(0, 3).forEach((row, i) => {
+    const y = 151 + i * 49;
+    // the highlight idles down the list the way a DS cursor does
+    g.push(
+      rect(
+        COL_R.x + 1,
+        y - 2,
+        COL_R.w - 2,
+        47,
+        `fill="${t.accent}" opacity="0"`,
+        an('opacity', `values="0;0.12;0" dur="9s" begin="${i * 3}s" repeatCount="indefinite"`)
+      )
+    );
+    g.push(f.draw(clean(row.label).toUpperCase(), COL_R.x + inset, y, { scale: 2, fill: t.accent }));
+    g.push(
+      f.paragraph(ellipsis(row.value, 40), COL_R.x + inset, y + 16, {
+        scale: 2,
+        leading: 0.5,
+        maxWidth: textW,
+        fill: t.ink,
+      }).svg
+    );
+  });
 
   return g.join('');
 }
@@ -219,79 +279,81 @@ function topScreen(f, d, content, t, now) {
 function bottomScreen(f, d, content, t) {
   const g = [];
 
+  const level = (c) => (c === 0 ? 0 : c < 3 ? 1 : c < 6 ? 2 : c < 10 ? 3 : 4);
+
   // --- cart slot / profile -------------------------------------------------
-  g.push(tile(10, 6, 400, 76, t));
+  g.push(tile(10, 4, 400, 74, t));
 
-  // 8x8 mosaic icon, seeded from the contribution data so it changes over time
-  const recent = d.days.slice(-64);
-  for (let i = 0; i < 64; i++) {
-    const c = recent[i]?.count ?? 0;
-    const lv = c === 0 ? 0 : c < 3 ? 1 : c < 6 ? 2 : c < 10 ? 3 : 4;
-    g.push(rect(20 + (i % 8) * 6, 20 + Math.floor(i / 8) * 6, 6, 6, `fill="${t.levels[lv]}"`));
+  // Profile picture: a pixel-art avatar, or the last 64 days of activity as a
+  // mosaic. Set "avatar" in content.json to "male", "female" or "activity".
+  const choice = content.avatar ?? 'male';
+  g.push(rect(20, 17, 48, 48, `fill="${t.bar}"`));
+  if (avatars[choice]) {
+    g.push(drawSprite(avatars[choice], 20, 17, 2));
+  } else {
+    const recent = d.days.slice(-64);
+    const blank = d.total === 0;
+    for (let i = 0; i < 64; i++) {
+      const col = i % 8;
+      const row = Math.floor(i / 8);
+      // Without contribution data the mosaic would be a dead grey square.
+      const lv = blank ? [0, 2, 3, 2][(col + row) % 4] : level(recent[i]?.count ?? 0);
+      g.push(rect(20 + col * 6, 17 + row * 6, 6, 6, `fill="${t.levels[lv]}"`));
+    }
   }
-  g.push(rect(20, 20, 48, 48, `fill="none" stroke="${t.tileEdge}"`));
+  g.push(rect(20, 17, 48, 48, `fill="none" stroke="${t.tileEdge}"`));
 
-  g.push(f.draw(clean(content.handle), 82, 18, { scale: 3, fill: t.ink }));
-  g.push(f.draw(`${nf.format(d.total)} CONTRIBUTIONS`, 82, 46, { scale: 2, fill: t.accent }));
+  g.push(f.draw(clean(content.handle), 82, 12, { scale: 3, fill: t.ink }));
+  g.push(f.draw(`${nf.format(d.total)} CONTRIBUTIONS`, 82, 40, { scale: 2, fill: t.accent }));
   g.push(
-    f.draw(`${d.repoCount} REPOS ` + '•' + ` ${nf.format(d.stars)} STARS`, 82, 64, {
+    f.draw(`${d.repoCount} REPOS • ${nf.format(d.stars)} STARS`, 82, 58, {
       scale: 2,
       fill: t.inkDim,
     })
   );
 
   // --- languages -----------------------------------------------------------
-  g.push(tile(10, 88, 196, 66, t));
-  g.push(f.draw('LANGUAGES', 20, 94, { scale: 2, fill: t.inkDim }));
-  const langs = d.languages.slice(0, 3);
-  langs.forEach((l, i) => {
-    const y = 112 + i * 14;
+  // Name and percentage sit ON the bar, which is the only way three rows of
+  // readable 16px text fit in a 196px tile.
+  g.push(tile(10, 82, 196, 82, t));
+  g.push(f.draw('LANGUAGES', 20, 88, { scale: 2, fill: t.inkDim }));
+  d.languages.slice(0, 3).forEach((l, i) => {
+    const y = 108 + i * 18;
     const w = 176;
-    g.push(rect(20, y, w, 12, `fill="${t.bar}" rx="1"`));
-    const fillW = Math.max(4, (w * l.pct) / 100);
+    g.push(rect(20, y, w, 16, `fill="${t.bar}" rx="1"`));
     g.push(
-      rect(
-        20,
-        y,
-        4,
-        12,
-        `fill="${t.accent}" opacity="0.45" rx="1"`,
-        an('width', `values="4;${r(fillW)}" dur="1.2s" begin="${0.3 + i * 0.15}s" fill="freeze"`)
-      )
+      `<g opacity="0.4">${growBar(20, y, (w * l.pct) / 100, 16, t.accent, 0.3 + i * 0.15)}</g>`
     );
-    g.push(f.draw(ellipsis(l.name, 12).toUpperCase(), 24, y + 2, { scale: 2, fill: t.ink }));
-    g.push(f.draw(`${Math.round(l.pct)}%`, 192, y + 2, { scale: 2, fill: t.inkDim, align: 'right' }));
+    g.push(f.draw(ellipsis(l.name, 13).toUpperCase(), 24, y + 4, { scale: 2, fill: t.ink }));
+    g.push(f.draw(`${Math.round(l.pct)}%`, 192, y + 4, { scale: 2, fill: t.inkDim, align: 'right' }));
   });
 
   // --- stats ---------------------------------------------------------------
-  g.push(tile(214, 88, 196, 66, t));
-  g.push(f.draw('SAVE DATA', 224, 94, { scale: 2, fill: t.inkDim }));
-  const rows = [
+  g.push(tile(214, 82, 196, 82, t));
+  g.push(f.draw('SAVE DATA', 224, 88, { scale: 2, fill: t.inkDim }));
+  [
     ['STREAK', `${d.current}D`],
     ['BEST', `${d.longest}D`],
     ['FOLLOWERS', `${nf.format(d.followers)}`],
-  ];
-  rows.forEach(([k, v], i) => {
-    const y = 114 + i * 14;
+  ].forEach(([k, v], i) => {
+    const y = 110 + i * 18;
     g.push(f.draw(k, 224, y, { scale: 2, fill: t.inkDim }));
     g.push(f.draw(v, 400, y, { scale: 2, fill: t.ink, align: 'right' }));
   });
 
   // --- contribution graph --------------------------------------------------
-  g.push(tile(10, 160, 400, 82, t));
-  g.push(f.draw('CONTRIBUTIONS', 20, 168, { scale: 2, fill: t.inkDim }));
-  t.levels.forEach((c, i) => g.push(rect(340 + i * 8, 169, 6, 6, `fill="${c}" rx="1"`)));
-  g.push(f.draw('LESS', 336, 168, { scale: 2, fill: t.inkDim, align: 'right' }));
+  g.push(tile(10, 168, 400, 78, t));
+  g.push(f.draw('CONTRIBUTIONS', 20, 174, { scale: 2, fill: t.inkDim }));
+  g.push(f.draw('LESS', 300, 174, { scale: 2, fill: t.inkDim, align: 'right' }));
+  t.levels.forEach((c, i) => g.push(rect(306 + i * 8, 175, 6, 6, `fill="${c}" rx="1"`)));
+  g.push(f.draw('MORE', 350, 174, { scale: 2, fill: t.inkDim }));
 
   const gx = 20;
-  const gy = 188;
+  const gy = 192;
   d.days.forEach((day, i) => {
     const wk = Math.floor(i / 7);
-    const dow = i % 7;
     if (wk > 52) return;
-    const c = day.count;
-    const lv = c === 0 ? 0 : c < 3 ? 1 : c < 6 ? 2 : c < 10 ? 3 : 4;
-    g.push(rect(gx + wk * 7, gy + dow * 7, 6, 6, `fill="${t.levels[lv]}" rx="1"`));
+    g.push(rect(gx + wk * 7, gy + (i % 7) * 7, 6, 6, `fill="${t.levels[level(day.count)]}" rx="1"`));
   });
   // a soft scanline sweeping across the grid, like the DS menu shimmer
   g.push(
@@ -306,32 +368,32 @@ function bottomScreen(f, d, content, t) {
   );
 
   // --- latest push ---------------------------------------------------------
-  g.push(tile(10, 248, 400, 42, t));
+  g.push(tile(10, 250, 400, 38, t));
   const commits = d.commits.slice(0, 3);
   if (commits.length === 0) {
-    g.push(f.draw('NO RECENT PUSHES', 20, 264, { scale: 2, fill: t.inkDim }));
+    g.push(f.draw('NO RECENT PUBLIC PUSHES', 20, 262, { scale: 2, fill: t.inkDim }));
   }
   commits.forEach((c, i) => {
     const inner =
-      f.draw('▶ ' + ellipsis(c.repo, 22), 20, 254, { scale: 2, fill: t.accent2 }) +
-      f.draw(c.date, 400, 254, { scale: 2, fill: t.inkDim, align: 'right' }) +
-      f.draw(ellipsis(c.message, 31), 20, 272, { scale: 2, fill: t.ink });
+      f.draw('▶ ' + ellipsis(c.repo, 20), 20, 253, { scale: 2, fill: t.accent2 }) +
+      f.draw(c.date, 400, 253, { scale: 2, fill: t.inkDim, align: 'right' }) +
+      f.draw(ellipsis(c.message, 31), 20, 271, { scale: 2, fill: t.ink });
     g.push(slotFade(inner, i, commits.length, 4));
   });
 
   // --- selection ring, cycling across the four tiles -----------------------
   g.push(
-    `<rect x="8" y="4" width="404" height="80" rx="4" fill="none" stroke="${t.accent}" stroke-width="2" stroke-dasharray="5 3">` +
+    `<rect x="8" y="2" width="404" height="78" rx="4" fill="none" stroke="${t.accent}" stroke-width="2" stroke-dasharray="5 3">` +
       anim('x', '8;8;212;8', 12) +
-      anim('y', '4;86;86;158', 12) +
+      anim('y', '2;80;80;166', 12) +
       anim('width', '404;200;200;404', 12) +
-      anim('height', '80;70;70;86', 12) +
+      anim('height', '78;86;86;82', 12) +
       `<animate attributeName="stroke-dashoffset" values="0;-8" dur="0.5s" repeatCount="indefinite"/>` +
       `</rect>`
   );
 
   // --- footer --------------------------------------------------------------
-  const fy = 296;
+  const fy = 293;
   // brightness sun
   g.push(circle(22, fy + 7, 4, `fill="none" stroke="${t.inkDim}"`));
   for (let i = 0; i < 8; i++) {
@@ -396,13 +458,17 @@ function shell(f, t) {
   g.push(rrect(BODY_X, HINGE_Y - 6, 150, HINGE_H + 12, 14, `fill="url(#shell)" stroke="${t.shellLine}"`));
   g.push(rrect(BODY_X + BODY_W - 150, HINGE_Y - 6, 150, HINGE_H + 12, 14, `fill="url(#shell)" stroke="${t.shellLine}"`));
 
-  // stylus resting in the hinge channel
-  g.push(rrect(400, 416, 320, 11, 5.5, `fill="${t.shellEdge}" opacity="0.75" stroke="${t.shellLine}"`));
-  g.push(rrect(700, 416, 20, 11, 5.5, `fill="${t.led}" opacity="0.85"`));
+  // Mic hole and label, kept in the flat channel well clear of the stylus.
+  g.push(circle(300, 422, 3.5, `fill="${t.shellLine}" opacity="0.75"`));
+  g.push(circle(300, 422, 1.5, `fill="${t.bezel}" opacity="0.5"`));
+  g.push(f.draw('MIC', 312, 417, { scale: 2, fill: t.shellInk, opacity: 0.7 }));
 
-  // mic
-  g.push(circle(360, 422, 3.5, `fill="${t.shellLine}" opacity="0.7"`));
-  g.push(f.draw('MIC', 370, 417, { scale: 2, fill: t.shellInk, opacity: 0.7 }));
+  // Stylus, seated in its slot between the two hinge knuckles (170..610).
+  const sy = 417;
+  g.push(rrect(360, sy - 3, 246, 16, 8, `fill="${t.shellLine}" opacity="0.18"`)); // slot recess
+  g.push(rrect(372, sy, 222, 10, 5, `fill="${t.shellEdge}" stroke="${t.shellLine}"`));
+  g.push(rrect(372, sy, 26, 10, 5, `fill="${t.shellLine}" opacity="0.45"`)); // tip
+  g.push(rrect(560, sy, 34, 10, 5, `fill="${t.shellLine}" opacity="0.25"`)); // grip
 
   // power LED
   g.push(

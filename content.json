@@ -3,6 +3,9 @@
 
   "handle": "gogeorge",
 
+  "_avatar": "Profile picture in the cart slot: \"male\", \"female\", or \"activity\" for a mosaic of your last 64 days of contributions.",
+  "avatar": "male",
+
   "nowPlaying": [
     {
       "title": "CNF x LLM prompts",

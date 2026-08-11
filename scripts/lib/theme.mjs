@@ -31,7 +31,9 @@ export const themes = {
     tileEdge: '#232d38',
     tileTop: '#1c2530',
     bar: '#1b2430',
-    levels: ['#151c24', '#0e4429', '#006d32', '#26a641', '#39d353'],
+    // levels[0] must stay clearly lighter than `tile`, or an empty day
+    // disappears into the panel behind it.
+    levels: ['#212c38', '#0e4429', '#006d32', '#26a641', '#39d353'],
   },
 
   light: {
@@ -48,8 +50,9 @@ export const themes = {
     buttonInk: '#6c7d09',
     led: '#39d353',
 
-    screen: '#f7f9f2',
-    grid: '#e4eadd',
+    // Slightly off-white so the white menu tiles still read as raised panels.
+    screen: '#eaeee2',
+    grid: '#dfe5d5',
     gridMajor: '#d2dcc7',
     ink: '#2a312e',
     inkDim: '#79857e',
