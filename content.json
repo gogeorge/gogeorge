@@ -7,7 +7,7 @@
   "name": "George",
 
   "_bio": "One line under your name. Keep it under ~104 characters.",
-  "bio": "Creative developer & researcher — developer by day, designer by night.",
+  "bio": "Creative developer / developer by day, designer by night.",
 
   "_focus": "Up to five topic pills. Short phrases read best; long ones auto-shrink.",
   "focus": [
@@ -19,15 +19,15 @@
 
   "_now": "What you're working on right now. Up to four lines, ~46 chars each.",
   "now": [
-    "Grammars (CNF) for LLM system prompts",
-    "A small TypeScript UI component library",
-    "Studying International Business Management"
+    "Working on my thesis on evaluatings snob's arousal states and their pricing models",
+    "Developing a full stack app that converts email content into TO-DO list cards",
+    "Enrolling in the Special Forces"
   ],
 
   "_next": "What's coming up next / longer term. Up to four lines.",
   "next": [
-    "Open-source contributions on UI tooling",
-    "Writing up the CNF-prompting research",
-    "Open to remote work and freelance"
+    "Write Medium articles backed by python-analyzed data",
+    "Contribute to open source projects",
+    "Open to start-up projects and freelancing"
   ]
 }
