@@ -1,12 +1,11 @@
 {
-  "name": "gogeorge-ds-readme",
-  "version": "1.0.0",
+  "name": "gogeorge-github-readme",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Renders the profile README's Nintendo-DS-style dashboard as a self-contained animated SVG.",
+  "description": "Renders a GitHub-styled profile stats card as a self-contained SVG, in matching dark and light themes.",
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "preview": "node scripts/build.mjs --preview"
+    "build": "node scripts/build.mjs"
   },
   "engines": {
     "node": ">=20"

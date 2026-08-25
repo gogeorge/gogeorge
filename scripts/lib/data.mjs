@@ -1,5 +1,5 @@
 /**
- * Gathers everything the DS screens display.
+ * Gathers everything the profile card displays.
  *
  * Degrades in three steps so the build never hard-fails:
  *   graphql  - a token with read:user, gives the real contribution calendar
@@ -13,7 +13,7 @@ async function gh(path, token) {
   const res = await fetch(API + path, {
     headers: {
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'ds-readme',
+      'User-Agent': 'github-readme-card',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
@@ -27,7 +27,7 @@ async function graphql(query, variables, token) {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'User-Agent': 'ds-readme',
+      'User-Agent': 'github-readme-card',
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -105,30 +105,36 @@ async function topLanguages(owned, token) {
 }
 
 /**
- * Recent commits, read from the repos themselves rather than the events feed.
- * PushEvent payloads routinely arrive without their `commits` array, so the
- * events API is not a dependable source for commit messages.
+ * A 24-bucket histogram of the hour each commit was authored.
+ *
+ * The commit's author date carries the author's own UTC offset, so the hour in
+ * the ISO string (chars 11–12) is already local wall-clock time — exactly the
+ * "when do you actually commit" signal the clock visual wants. Reads up to 100
+ * commits from each of the most recently pushed repos; a handful of calls.
  */
-async function recentCommits(owned, login, token) {
-  const found = [];
-  for (const r of owned.slice(0, 4)) {
+async function commitHours(owned, login, token) {
+  const hours = new Array(24).fill(0);
+  let sampled = 0;
+  for (const r of owned.slice(0, 6)) {
     try {
       const commits = await gh(
-        `/repos/${r.full_name}/commits?author=${login}&per_page=3`,
+        `/repos/${r.full_name}/commits?author=${login}&per_page=100`,
         token
       );
       for (const c of commits) {
-        found.push({
-          repo: r.name,
-          message: c.commit.message.split('\n')[0],
-          date: (c.commit.author?.date ?? c.commit.committer?.date ?? '').slice(0, 10),
-        });
+        const iso = c.commit.author?.date ?? c.commit.committer?.date ?? '';
+        if (iso.length < 13) continue;
+        const h = Number(iso.slice(11, 13));
+        if (h >= 0 && h < 24) {
+          hours[h]++;
+          sampled++;
+        }
       }
     } catch {
-      /* empty repo, or no commits by this author */
+      /* empty or unreadable repo */
     }
   }
-  return found.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+  return { hours, sampled };
 }
 
 /** Only needed to approximate a calendar when there is no token for GraphQL. */
@@ -177,11 +183,9 @@ function demo() {
       { name: 'CSS', pct: 18 },
       { name: 'Python', pct: 14 },
     ],
-    commits: [
-      { repo: 'gogeorge', message: 'Render the DS chrome as pure SVG', date: iso(today) },
-      { repo: 'cnf-prompts', message: 'Normalise clause ordering', date: iso(today) },
-      { repo: 'ui-bits', message: 'Add focus ring to menu tiles', date: iso(today) },
-    ],
+    // A plausible night-owl curve so the clock has shape offline.
+    hours: [4, 2, 1, 0, 0, 0, 0, 1, 3, 6, 9, 11, 8, 7, 9, 12, 14, 11, 9, 13, 18, 22, 16, 8],
+    hoursSampled: 234,
   };
 }
 
@@ -193,9 +197,9 @@ export async function collect(login, token) {
     ]);
     const owned = repos.filter((r) => !r.fork && !r.archived);
 
-    const [languages, commits] = await Promise.all([
+    const [languages, hourData] = await Promise.all([
       topLanguages(owned, token),
-      recentCommits(owned, login, token),
+      commitHours(owned, login, token),
     ]);
 
     let days;
@@ -235,7 +239,8 @@ export async function collect(login, token) {
       total,
       ...streaks(days),
       languages,
-      commits,
+      hours: hourData.hours,
+      hoursSampled: hourData.sampled,
     };
   } catch (err) {
     console.warn(`! GitHub fetch failed (${err.message}) - using demo data`);

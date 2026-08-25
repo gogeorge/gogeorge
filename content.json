@@ -1,41 +1,33 @@
 {
-  "_comment": "Everything the DS says about you. Edit this, run `npm run build`, commit. Keep it short — the screens are 420px wide and the font is 5px.",
+  "_comment": "Everything the card says about you. Edit this, run `npm run build`, commit. The stats above the text come straight from the GitHub API.",
 
   "handle": "gogeorge",
 
-  "_theme": "Shell colour: \"lime\", \"noir\" (black), \"snow\" (white), \"cobalt\" (blue) or \"coral\" (pink). The screens follow the viewer's GitHub light/dark setting either way.",
-  "theme": "lime",
+  "_name": "Display name shown in the header. Defaults to your GitHub name if omitted.",
+  "name": "George",
 
-  "_avatar": "Profile picture in the cart slot: \"male\", \"female\", or \"activity\" for a mosaic of your last 64 days of contributions.",
-  "avatar": "male",
+  "_bio": "One line under your name. Keep it under ~104 characters.",
+  "bio": "Creative developer & researcher — developer by day, designer by night.",
 
-  "nowPlaying": [
-    {
-      "title": "CNF x LLM prompts",
-      "sub": "Grammars for system prompt structure"
-    },
-    {
-      "title": "UI components",
-      "sub": "Open source contributions welcome"
-    },
-    {
-      "title": "Intl. Business Mgmt",
-      "sub": "Developer by day, designer by night"
-    }
+  "_focus": "Up to five topic pills. Short phrases read best; long ones auto-shrink.",
+  "focus": [
+    "LLM system prompts",
+    "CNF grammars",
+    "UI components",
+    "open source"
   ],
 
-  "status": [
-    {
-      "label": "Researching",
-      "value": "Language, CNF, and LLM system prompts"
-    },
-    {
-      "label": "Collab",
-      "value": "Open source UI component work"
-    },
-    {
-      "label": "Work",
-      "value": "Open for remote and freelance"
-    }
+  "_now": "What you're working on right now. Up to four lines, ~46 chars each.",
+  "now": [
+    "Grammars (CNF) for LLM system prompts",
+    "A small TypeScript UI component library",
+    "Studying International Business Management"
+  ],
+
+  "_next": "What's coming up next / longer term. Up to four lines.",
+  "next": [
+    "Open-source contributions on UI tooling",
+    "Writing up the CNF-prompting research",
+    "Open to remote work and freelance"
   ]
 }

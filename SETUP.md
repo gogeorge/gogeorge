@@ -1,9 +1,11 @@
 # Build your own
 
-How to put this handheld on your own GitHub profile. Takes about ten minutes.
+How to put this profile card on your own GitHub profile. Takes about ten minutes.
 
-You'll end up with a self-contained animated SVG that redraws itself every
-morning with your real GitHub stats, committed straight into your profile repo.
+You'll end up with a self-contained SVG — one for dark mode, one for light —
+that redraws itself every morning with your real GitHub stats, committed
+straight into your profile repo. It's styled entirely from GitHub's own design
+language, so it reads as a slice of the real UI.
 
 ---
 
@@ -27,7 +29,7 @@ From this repo you need:
 content.json
 package.json
 scripts/
-.github/workflows/refresh-ds.yml
+.github/workflows/refresh.yml
 ```
 
 Drop them into your profile repo, keeping the folder structure. You do **not**
@@ -39,60 +41,27 @@ Open `content.json`. This is the only file you edit routinely.
 
 ```jsonc
 {
-  "handle": "octocat",          // your GitHub username — also used to fetch your stats
-  "theme": "lime",              // shell colour, see below
-  "avatar": "male",             // "male", "female", or "activity"
-  "nowPlaying": [ ... ],        // the rotating headline on the top screen
-  "status": [ ... ]             // the three-row list below it
+  "handle": "octocat",                 // your GitHub username — also used to fetch your stats
+  "name": "The Octocat",               // display name in the header (optional; defaults to your GitHub name)
+  "bio": "Building things at GitHub.", // one line under your name, ~104 chars
+  "focus": ["open source", "APIs"],    // up to five topic pills
+  "now":  ["Shipping the v2 API"],     // "Currently" list — up to four lines
+  "next": ["A public changelog"]       // "Up next" list — up to four lines
 }
 ```
 
-### Picking a console
-
-**`theme`** sets the plastic:
-
-| | |
-|---|---|
-| `lime` | the DS Lite green this is a tribute to (default) |
-| `noir` | black |
-| `snow` | white |
-| `cobalt` | blue |
-| `coral` | pink |
-
-**`avatar`** sets the profile picture in the cart slot: `male`, `female`, or
-`activity` for a mosaic of your last 64 days of contributions.
-
-The two screens are separate from the shell colour — they follow whether the
-person looking at your profile has GitHub in light or dark mode. That's why
-every theme is rendered twice, and why a black console can show a light UI or a
-white console a dark one. You don't choose that; your visitors do.
-
-Run `npm run preview` and open `preview.html` to see all five shells in both
-modes and both avatars on one page, with your current pick outlined in blue.
-
-**Mind the character budgets.** The screens are 420 units wide and the font is
-5 pixels, so space is genuinely tight. Anything too long is shortened with an
-ellipsis rather than overflowing, but it's better to write to the limit:
-
-| Field | Fits |
-|---|---|
-| `handle` | 13 characters |
-| `nowPlaying[].title` | 13 at the large size, then auto-shrinks to 20 |
-| `nowPlaying[].sub` | ~40, wraps to two lines |
-| `status[].label` | 20 |
-| `status[].value` | ~40, wraps to two lines |
-
-`nowPlaying` and `status` each show up to three entries. Fewer is fine.
+Everything else on the card — repositories, followers, stars, most-used
+languages and the "when you commit" clock — is pulled live from the GitHub API,
+so there's nothing to type by hand.
 
 ## 3. Render it
 
 ```bash
-npm run preview
+npm run build
 ```
 
-That writes `assets/ds-dark.svg`, `assets/ds-light.svg` and a `preview.html`
-showing both themes side by side, plus the two avatar options. Open
-`preview.html` in a browser to check your text fits.
+That writes `assets/github-dark.svg` and `assets/github-light.svg`. Open either
+in a browser to check it.
 
 Unauthenticated, GitHub's API only gives you public data and the contribution
 graph will be sparse. To see the real thing locally, put a token in a `.env`
@@ -106,15 +75,15 @@ GH_TOKEN=ghp_your_token_here
 
 ## 4. Point the README at your repo
 
-In your `README.md`, embed the console. Replace **`octocat/octocat`** with your
+In your `README.md`, embed the card. Replace **`octocat/octocat`** with your
 own `username/repo` in all three URLs:
 
 ```html
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/octocat/octocat/main/assets/ds-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/octocat/octocat/main/assets/ds-light.svg">
-    <img alt="A handheld console showing my GitHub stats" src="https://raw.githubusercontent.com/octocat/octocat/main/assets/ds-dark.svg" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/octocat/octocat/main/assets/github-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/octocat/octocat/main/assets/github-light.svg">
+    <img alt="My GitHub profile card" src="https://raw.githubusercontent.com/octocat/octocat/main/assets/github-dark.svg" width="100%">
   </picture>
 </p>
 ```
@@ -151,54 +120,46 @@ select **Read and write permissions**, and save.
 
 ```bash
 git add .
-git commit -m "Add DS profile console"
+git commit -m "Add GitHub profile card"
 git push
 ```
 
-Then open the **Actions** tab, pick **Refresh DS**, and hit **Run workflow** to
-render it immediately rather than waiting for the 06:00 UTC schedule.
+Then open the **Actions** tab, pick **Refresh profile card**, and hit **Run
+workflow** to render it immediately rather than waiting for the 06:00 UTC
+schedule.
 
 ---
 
 ## Customising further
 
-**Colours.** `scripts/lib/theme.mjs` is split in two: `screens` holds the dark
-and light screen palettes, `shells` holds one entry per console colour. To add
-your own shell, copy an existing preset, rename it, and use that name in
-`content.json` — an unknown name fails the build and lists the valid ones. One
-rule if you touch the screen palettes: keep `levels[0]` clearly lighter than
-`tile`, or empty days in the contribution graph vanish into the panel.
+**Colours.** `scripts/lib/theme.mjs` holds GitHub's Primer tokens for dark and
+light. They're GitHub's real values, so there's rarely a reason to touch them.
+The `levels` array is GitHub's green contribution scale, reused to shade the
+commit-clock spokes.
 
-**Avatars.** `scripts/lib/sprites.mjs` defines them as 24×24 ASCII art — `H`
-hair, `S` skin, `K` ink, `N` nose, `R` shirt, `.` transparent. Edit the grid or
-add your own and reference it by name in `content.json`. Row widths are checked
-at build time, so a miscount fails loudly instead of rendering skewed.
+**Layout.** `scripts/lib/render.mjs` is where the card is drawn. Each section —
+header, counters, languages, the "when you commit" clock, working-on notes — is its own
+function, laid out top-to-bottom with a running `y` cursor, so you can reorder,
+resize or drop a section without touching the others. Text `y` is the baseline.
 
-**The font.** `scripts/lib/glyphs.mjs` is a 5×7 bitmap font written as ASCII
-art. To add a character, add an 8-row entry (row 8 is only for descenders).
-Anything without a glyph is silently dropped rather than rendered as `?`.
+**The commit clock.** `scripts/lib/insights.mjs` draws the 24-hour dial. The hour
+buckets come from `commitHours()` in `data.mjs`, which reads timestamps off your
+public commits — so the more public commit history you have, the more it has to
+work with. The panel prints its sample size so a thin dial reads as honest.
 
-**Layout.** `scripts/lib/ds.mjs` has the shell geometry at the top and the two
-screen layouts below. Both screens are 420×315 with the origin at the top-left
-of the screen. Text `y` is the top of the cap box, not a baseline.
+**Language colours.** `scripts/lib/langs.mjs` mirrors GitHub Linguist's palette.
+Add an entry for any language it's missing; unknowns fall back to a neutral grey.
 
-### Two rules that keep it cheap to render
+**Icons.** `scripts/lib/icons.mjs` holds the octicon path data. Paste any icon
+from [primer/octicons](https://primer.style/foundations/icons) (the 16px
+variant) to add one.
+
+### One rule if you add motion
 
 A browser rasterises an `<img>`-embedded SVG as a single texture, so *any*
-change anywhere redraws the whole image. That makes two things unusually
-expensive, and both were learned the hard way here — an earlier version made
-laptop fans audible just by sitting on a profile page.
-
-**No filters.** `feDropShadow` and friends recompute across the element's whole
-bounding box on every redraw. The shell shadow is three offset rounded rects
-instead. If you want a glow, fake it with stacked shapes.
-
-**Animate discretely, never continuously.** A crossfade or a sweeping motion
-interpolates on every frame, pinning a core at 60fps forever. Every animation
-in this file uses `calcMode="discrete"` — the clock's second hand ticks once a
-second instead of sweeping, panels snap instead of fading. The result repaints
-about once a second rather than sixty times, and it looks *more* like a real
-handheld, not less.
+change anywhere redraws the whole image. The card is deliberately static. If you
+add an animation, make it finite and `fill="freeze"` — a looping animation
+repaints the entire card forever and can pin a CPU core.
 
 ---
 
@@ -209,24 +170,25 @@ GitHub proxies and caches images through camo. A refresh usually shows up within
 minutes, but it can lag. Confirm the SVG in the repo actually changed first — if
 the workflow logged "No change", the data genuinely didn't move.
 
-**The contribution graph is nearly empty.**
-The `GH_PAT` secret is missing, expired, or lacks `read:user`. Check the workflow
-log: it prints `data source: graphql` when the token worked, and
+**Contributions and the streak read low.**
+The `GH_PAT` secret is missing, expired, or lacks `read:user`. Without it the
+totals come from public events instead of the real contribution calendar. Check
+the workflow log: it prints `data source: graphql` when the token worked, and
 `data source: events` when it fell back.
+
+**The commit clock looks sparse.**
+It's built from the timestamps on your public commits, capped at a few of your
+most recently pushed repos. If most of your work is private or squashed by a bot,
+there simply aren't many public timestamps to plot — the sample size next to the
+dial tells you how many it found.
 
 **The workflow fails on `git push`.**
 Workflow permissions are still read-only. See step 6.
 
-**"NO RECENT PUBLIC PUSHES".**
-Commits are read from your most recently pushed public repos. If your recent
-work is all private, there is nothing public to show — this is deliberate, the
-build never reads private commit messages into a public image.
+**The "working on" section is empty.**
+It reads the `now` and `next` arrays from `content.json`. Add a few short lines
+to each — this block is written by you, not fetched.
 
-**Nothing animates.**
-Check you're looking at the SVG through an `<img>` or a browser tab, not a
-Markdown previewer that rasterises it. Everything still reads correctly when
-frozen: bars render full and rotating panels show their first entry.
-
-**A character comes out blank.**
-It has no glyph in the 5×7 font. Add it to `glyphs.mjs`, or use a plain ASCII
-substitute.
+**A language or icon is missing.**
+Add the language to `scripts/lib/langs.mjs` or the octicon to
+`scripts/lib/icons.mjs`, then rebuild.
