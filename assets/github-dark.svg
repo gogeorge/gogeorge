@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 854 852" width="854" height="852" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" role="img" aria-label="George — 1,146 contributions in the last year, 4-day streak, top language JavaScript">
-<title>George — 1,146 contributions in the last year, 4-day streak, top language JavaScript</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 854 852" width="854" height="852" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" role="img" aria-label="George — 1,179 contributions in the last year, 5-day streak, top language JavaScript">
+<title>George — 1,179 contributions in the last year, 5-day streak, top language JavaScript</title>
 <rect width="854" height="852" rx="6" fill="#0d1117"/>
 <text x="24" y="46" font-size="22" font-weight="600" fill="#e6edf3">George</text>
 <text x="24" y="68" font-size="15" fill="#7d8590">@gogeorge</text>
@@ -29,7 +29,7 @@
 <text x="449" y="212" font-size="12.5" fill="#7d8590">Stars</text>
 <line x1="628.5" y1="172" x2="628.5" y2="216" stroke="#21262d" stroke-width="1"/>
 <path transform="translate(650.5 178) scale(1)" d="M1.5 1.75V13.5h13.75a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1-.75-.75V1.75a.75.75 0 0 1 1.5 0Zm14.28 2.53-5.25 5.25a.75.75 0 0 1-1.06 0L7 7.06 4.28 9.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.25-3.25a.75.75 0 0 1 1.06 0L10 7.94l4.72-4.72a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z" fill="#7d8590"/>
-<text x="674.5" y="191" font-size="20" font-weight="600" fill="#e6edf3">1,146</text>
+<text x="674.5" y="191" font-size="20" font-weight="600" fill="#e6edf3">1,179</text>
 <text x="650.5" y="212" font-size="12.5" fill="#7d8590">Contributions</text>
 <rect x="24" y="248" width="458" height="172" rx="6" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
 <text x="40" y="276" font-size="14" font-weight="600" fill="#e6edf3">Most used languages</text>
@@ -51,10 +51,10 @@
 <text x="514" y="276" font-size="14" font-weight="600" fill="#e6edf3">Activity</text>
 <path transform="translate(514 294) scale(0.94)" d="M1.5 1.75V13.5h13.75a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1-.75-.75V1.75a.75.75 0 0 1 1.5 0Zm14.28 2.53-5.25 5.25a.75.75 0 0 1-1.06 0L7 7.06 4.28 9.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.25-3.25a.75.75 0 0 1 1.06 0L10 7.94l4.72-4.72a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z" fill="#7d8590"/>
 <text x="538" y="306" font-size="13" fill="#e6edf3">Total contributions</text>
-<text x="814" y="306" font-size="13" font-weight="600" fill="#e6edf3" text-anchor="end">1,146</text>
+<text x="814" y="306" font-size="13" font-weight="600" fill="#e6edf3" text-anchor="end">1,179</text>
 <path transform="translate(514 321) scale(0.94)" d="M9.533.753C9.496.34 9.16-.009 8.72.017 8.24.045 7.876.443 7.9.937c.033.69-.1 1.25-.32 1.717-.183.386-.44.729-.706 1.084l-.11.148c-.302.406-.628.858-.874 1.376-.283.594-.474 1.266-.474 2.09 0 .89.352 1.7.927 2.284A3.492 3.492 0 0 1 5.5 8.5c0-.478.14-.923.382-1.297.06.463.257.882.55 1.213.283.32.677.585 1.09.585.323 0 .59-.148.77-.365.174-.21.26-.47.29-.716.16.187.29.4.386.63.156.372.207.808.107 1.297-.187.912-.94 1.62-1.87 1.746a2.5 2.5 0 0 1-2.87-2.13 3.5 3.5 0 1 0 6.93-.99c0-2.52-1.283-3.797-2.474-4.981-1.19-1.184-2.436-2.425-2.653-4.81l-.001-.001Z" fill="#7d8590"/>
 <text x="538" y="333" font-size="13" fill="#e6edf3">Current streak</text>
-<text x="814" y="333" font-size="13" font-weight="600" fill="#e6edf3" text-anchor="end">4 days</text>
+<text x="814" y="333" font-size="13" font-weight="600" fill="#e6edf3" text-anchor="end">5 days</text>
 <path transform="translate(514 348) scale(0.94)" d="M4.75 0a.75.75 0 0 1 .75.75V2h5V.75a.75.75 0 0 1 1.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 13.25 16H2.75A1.75 1.75 0 0 1 1 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 0 1 4.75 0ZM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25V7.5Zm10.75-4H2.75a.25.25 0 0 0-.25.25V6h11V3.75a.25.25 0 0 0-.25-.25Z" fill="#7d8590"/>
 <text x="538" y="360" font-size="13" fill="#e6edf3">Longest streak</text>
 <text x="814" y="360" font-size="13" font-weight="600" fill="#e6edf3" text-anchor="end">18 days</text>
@@ -123,6 +123,6 @@
 <text x="445" y="760" font-size="13" fill="#e6edf3">Contribute to open source projects</text>
 <circle cx="431" cy="782" r="3.5" fill="none" stroke="#2f81f7" stroke-width="1.5"/>
 <text x="445" y="786" font-size="13" fill="#e6edf3">Open to start-up projects and freelancing</text>
-<text x="24" y="832" font-size="11" fill="#6e7681">Updated Aug 27, 2026 · data via GitHub API</text>
+<text x="24" y="832" font-size="11" fill="#6e7681">Updated Aug 28, 2026 · data via GitHub API</text>
 <text x="830" y="832" font-size="11" fill="#6e7681" text-anchor="end" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace">github.com/gogeorge</text>
 </svg>
